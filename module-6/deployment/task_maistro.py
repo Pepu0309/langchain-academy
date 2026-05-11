@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import merge_message_runs
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, START, END
@@ -103,24 +103,26 @@ class Profile(BaseModel):
     name: Optional[str] = Field(description="The user's name", default=None)
     location: Optional[str] = Field(description="The user's location", default=None)
     job: Optional[str] = Field(description="The user's job", default=None)
-    connections: list[str] = Field(
+    # Groq needs me to explicitly define Optional for these fields unlike OpenAI that guesses intent
+    connections: Optional[list[str]] = Field(
         description="Personal connection of the user, such as family members, friends, or coworkers",
         default_factory=list
     )
-    interests: list[str] = Field(
+    interests: Optional[list[str]] = Field(
         description="Interests that the user has", 
         default_factory=list
     )
 
 # ToDo schema
 class ToDo(BaseModel):
+    """Update the user's ToDo list with tasks, deadlines, and solutions."""
     task: str = Field(description="The task to be completed.")
     time_to_complete: Optional[int] = Field(description="Estimated time to complete the task (minutes).")
     deadline: Optional[datetime] = Field(
         description="When the task needs to be completed by (if applicable)",
         default=None
     )
-    solutions: list[str] = Field(
+    solutions: Optional[list[str]] = Field(
         description="List of specific, actionable solutions (e.g., specific ideas, service providers, or concrete options relevant to completing the task)",
         min_items=1,
         default_factory=list
@@ -138,7 +140,7 @@ class UpdateMemory(TypedDict):
     update_type: Literal['user', 'todo', 'instructions']
 
 # Initialize the model
-model = ChatOpenAI(model="gpt-4o", temperature=0)
+model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
 
 ## Create the Trustcall extractors for updating the user profile and ToDo list
 profile_extractor = create_extractor(
